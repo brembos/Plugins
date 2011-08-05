@@ -25,8 +25,9 @@ namespace Phoenix.Sales.Plugins
             if (context.Mode == MessageProcessingMode.Synchronous) { }
             if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
-                Entity entity = context.InputParameters["Target"] as Entity;
-                entity["accountnumber"] = "Hello World!";
+                var entity = context.InputParameters["Target"] as Entity;
+                if (entity != null)
+                    entity["accountnumber"] = "Hello World!";
             }
         }
     }

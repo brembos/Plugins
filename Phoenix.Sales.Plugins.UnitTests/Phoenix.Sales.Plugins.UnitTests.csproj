@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ContractPluginTests.cs" />
+    <Compile Include="OrganizationServiceContextWrapper.cs" />
     <Compile Include="SamplePluginTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
