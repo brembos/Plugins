@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Client;
 using Moq;
 using NUnit.Framework;
+using Phoenix.Sales.Plugins.UnitTests.Wrappers;
 
 namespace Phoenix.Sales.Plugins.UnitTests
 {
@@ -28,23 +26,16 @@ namespace Phoenix.Sales.Plugins.UnitTests
             contextMock.Setup(x => x.Mode).Returns(MessageProcessingMode.Synchronous);
             contextMock.Setup(x => x.InputParameters).Returns(parameters);
             serviceStub.Setup(x => x.GetService(typeof(IPluginExecutionContext))).Returns(contextMock.Object);
-            var pipelineContext = new Mock<IOrganizationServiceFactory>();
-            serviceStub.Setup(x => x.GetService(typeof(IOrganizationServiceFactory))).Returns(pipelineContext.Object);
+            var factory = new Mock<IOrganizationServiceFactory>();
+            serviceStub.Setup(x => x.GetService(typeof(IOrganizationServiceFactory))).Returns(factory.Object);
+
             var orgServiceMock = new Mock<IOrganizationService>();
+            factory.Setup(x => x.CreateOrganizationService(It.IsAny<Guid>())).Returns(orgServiceMock.Object);
 
-            var queryableStub = new Mock<IQueryable<Entity>>();
-            var queryProviderStub = new Mock<IQueryProvider>();
-            var orgContextStub = new Mock<OrganizationServiceContextWrapper>(orgServiceMock.Object, queryableStub.Object);
-            //var orgContextStub = new Mock<OrganizationServiceContextWrapper>(orgServiceMock.Object, queryProviderStub.Object);
+            IList<Entity> list = new List<Entity>();
+            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "123") } });
 
-
-            var entity1 = new Entity();
-            entity1.Attributes.Add("global_contractnumber", "00123");
-            var list = new List<Entity>() { entity1 };
-
-            queryProviderStub.Setup(x => x.CreateQuery<Entity>(It.IsAny<Expression>())).Returns(list.AsQueryable());
-
-            plugin = new ContractNumberPluginMock(orgContextStub.Object);
+            plugin = new ContractNumberPlugin(new FakeServiceContextFactory(list));
         }
 
 
@@ -61,7 +52,7 @@ namespace Phoenix.Sales.Plugins.UnitTests
             plugin.Execute(serviceProvider);
             //Assert
             object actual = ((Entity)contextMock.Object.InputParameters["Target"])["global_contractnumber"];
-            Assert.AreEqual("12345", actual);
+            Assert.AreEqual("124", actual);
         }
 
         [Test]
@@ -82,21 +73,6 @@ namespace Phoenix.Sales.Plugins.UnitTests
         {
             contextMock.Setup(x => x.Stage).Returns(stage);
             plugin.Execute(serviceProvider);
-        }
-    }
-
-    public class ContractNumberPluginMock : ContractNumberPlugin
-    {
-        private readonly OrganizationServiceContext organizationServiceContext;
-
-        public ContractNumberPluginMock(OrganizationServiceContext organizationServiceContext)
-        {
-            this.organizationServiceContext = organizationServiceContext;
-        }
-
-        public override OrganizationServiceContext GetOrganizationServiceContext(IOrganizationService service)
-        {
-            return organizationServiceContext;
         }
     }
 }

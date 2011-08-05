@@ -1,15 +1,25 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Client;
 
 namespace Phoenix.Sales.Plugins
 {
     public class ContractNumberPlugin : IPlugin
     {
         private static readonly object syncLock = new object();
+        readonly IServiceContextFactory serviceContextFactory;
 
         public const string ContractNumberFieldName = "global_contractnumber";
+
+        public ContractNumberPlugin()
+        {
+            serviceContextFactory = new ServiceContextFactory();
+        }
+
+        public ContractNumberPlugin(IServiceContextFactory factory)
+        {
+            serviceContextFactory = factory;
+        }
 
         public void Execute(IServiceProvider serviceProvider)
         {
@@ -22,7 +32,7 @@ namespace Phoenix.Sales.Plugins
 
             var serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
             var service = serviceFactory.CreateOrganizationService(context.UserId);
-            var orgContext = GetOrganizationServiceContext(service);
+            var orgContext = serviceContextFactory.GetOrganizationServiceContext(service);
 
             if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
@@ -39,16 +49,13 @@ namespace Phoenix.Sales.Plugins
                         if (int.TryParse(current, out maxValue))
                         {
                             maxValue = maxValue + 1;
-                            entity[ContractNumberFieldName] = maxValue;
+                            entity[ContractNumberFieldName] = maxValue.ToString();
                         }
                     }
                 }
             }
         }
 
-        public virtual OrganizationServiceContext GetOrganizationServiceContext(IOrganizationService service)
-        {
-            return new OrganizationServiceContext(service);
-        }
+
     }
 }
