@@ -38,10 +38,10 @@ namespace Phoenix.Sales.Plugins
             {
                 lock (syncLock)
                 {
-                    //var current = orgContext.CreateQuery("global_contract").Select(c => c.Attributes["global_contractnumber"]).Max().ToString();
-                    var query = orgContext.CreateQuery("global_contract");
-                    var select = query.Select(c => c.Attributes["global_contractnumber"].ToString());
-                    var current = select.Max().ToString();
+                    var current = orgContext.CreateQuery("global_contract").Select(c => c.Attributes["global_contractnumber"]).Max().ToString();
+                    //var query = orgContext.CreateQuery("global_contract");
+                    //var select = query.Select(c => c.Attributes["global_contractnumber"].ToString());
+                    //var current = select.Max().ToString();
                     var entity = context.InputParameters["Target"] as Entity;
                     if (entity != null)
                     {

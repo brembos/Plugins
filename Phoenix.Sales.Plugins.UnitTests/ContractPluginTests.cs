@@ -34,6 +34,8 @@ namespace Phoenix.Sales.Plugins.UnitTests
 
             IList<Entity> list = new List<Entity>();
             list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "123") } });
+            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "122") } });
+            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "121") } });
 
             plugin = new ContractNumberPlugin(new FakeServiceContextFactory(list));
         }
