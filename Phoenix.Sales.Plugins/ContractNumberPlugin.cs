@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
 
 namespace Phoenix.Sales.Plugins
 {
@@ -30,27 +31,59 @@ namespace Phoenix.Sales.Plugins
             if (context.Mode != MessageProcessingMode.Synchronous)
                 throw new PluginException("Context.Mode must be of type MessageProcessingMode.Synchronous.");
 
+
             var serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
             var service = serviceFactory.CreateOrganizationService(context.UserId);
             var orgContext = serviceContextFactory.GetOrganizationServiceContext(service);
+            var tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
+            if (tracingService == null) throw new PluginException("Failed to retrieve the tracing service");
+            tracingService.Trace("Entering");
 
             if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
                 lock (syncLock)
                 {
-                    var current = orgContext.CreateQuery("global_contract").Select(c => c.Attributes["global_contractnumber"]).Max().ToString();
-                    //var query = orgContext.CreateQuery("global_contract");
-                    //var select = query.Select(c => c.Attributes["global_contractnumber"].ToString());
-                    //var current = select.Max().ToString();
                     var entity = context.InputParameters["Target"] as Entity;
                     if (entity != null)
                     {
-                        int maxValue;
-                        if (int.TryParse(current, out maxValue))
+                        if (entity.LogicalName != "global_contract")
+                            throw new PluginException("Entity is not of correct type. Check LogicalName.");
+
+                        //var numbers = orgContext.CreateQuery("global_contract").Select(c => c["global_contractnumber"].ToString()).ToList();
+                        //tracingService.Trace("Found: ", numbers.Count);
+
+
+                        var query = new QueryExpression
                         {
-                            maxValue = maxValue + 1;
-                            entity[ContractNumberFieldName] = maxValue.ToString();
+                            EntityName = "global_contract",
+                            ColumnSet = new ColumnSet("global_contractnumber"),
+                            Criteria = new FilterExpression
+                            {
+                                Conditions = 
+                                {
+                                    new ConditionExpression
+                                    {
+                                        AttributeName = "global_contractnumber", 
+                                        Operator = ConditionOperator.NotNull
+                                    }
+                                }
+                            }
+                        };
+                        int current = 0;
+
+                        var entities = service.RetrieveMultiple(query).Entities;
+                        if (entities != null && entities.Count > 0)
+                        {
+                            tracingService.Trace("Found: ", entities.Count);
+                            var contracts = entities.Select(c => c.Attributes["global_contractnumber"].ToString()).ToList();
+                            var result = contracts.Max();
+                            if (int.TryParse(result, out current))
+                            {
+                            }
                         }
+                        current = current + 1;
+                        entity[ContractNumberFieldName] = current.ToString();
+                        service.Update(entity);
                     }
                 }
             }

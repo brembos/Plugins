@@ -18,17 +18,17 @@ namespace Phoenix.Sales.Plugins.UnitTests
         [TestFixtureSetUp]
         public void SetupServiceProvider()
         {
-            var serviceStub = new Mock<IServiceProvider>();
-            serviceProvider = serviceStub.Object;
             contextMock = new Mock<IPluginExecutionContext>();
             contextMock.Setup(x => x.Depth).Returns(1);
             contextMock.Setup(x => x.Stage).Returns(MessageProcessingStage.PostOperation);
             contextMock.Setup(x => x.Mode).Returns(MessageProcessingMode.Synchronous);
             contextMock.Setup(x => x.InputParameters).Returns(parameters);
+            var serviceStub = new Mock<IServiceProvider>();
+            serviceProvider = serviceStub.Object;
             serviceStub.Setup(x => x.GetService(typeof(IPluginExecutionContext))).Returns(contextMock.Object);
             var factory = new Mock<IOrganizationServiceFactory>();
             serviceStub.Setup(x => x.GetService(typeof(IOrganizationServiceFactory))).Returns(factory.Object);
-
+            serviceStub.Setup(x => x.GetService(typeof(ITracingService))).Returns(new Mock<ITracingService>().Object);
             var orgServiceMock = new Mock<IOrganizationService>();
             factory.Setup(x => x.CreateOrganizationService(It.IsAny<Guid>())).Returns(orgServiceMock.Object);
 
@@ -47,7 +47,7 @@ namespace Phoenix.Sales.Plugins.UnitTests
         public void GlobalContractNumberAttributeMustExist()
         {
             //Arrange
-            var entity = new Entity(ContractNumberPlugin.ContractNumberFieldName);
+            var entity = new Entity(ContractNumberPlugin.ContractNumberFieldName) { LogicalName = "global_contract" };
             var item = new KeyValuePair<string, object>("Target", entity);
             parameters.Add(item);
             //Act
