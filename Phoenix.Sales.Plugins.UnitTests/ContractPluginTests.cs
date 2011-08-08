@@ -10,19 +10,14 @@ namespace Phoenix.Sales.Plugins.UnitTests
     [TestFixture]
     public class ContractPluginTests
     {
-        private IServiceProvider serviceProvider;
-        private Mock<IPluginExecutionContext> contextMock;
-        private readonly ParameterCollection parameters = new ParameterCollection();
         ContractNumberPlugin plugin;
-        IList<Entity> list = new List<Entity>();
+        IServiceProvider serviceProvider;
+        Mock<IPluginExecutionContext> contextMock;
+        readonly ParameterCollection parameters = new ParameterCollection();
+        readonly IList<Entity> list = new List<Entity>();
 
         [TestFixtureSetUp]
         public void SetupServiceProvider()
-        {
-            plugin = GetPlugin();
-        }
-
-        private ContractNumberPlugin GetPlugin()
         {
             contextMock = new Mock<IPluginExecutionContext>();
             contextMock.Setup(x => x.Depth).Returns(1);
@@ -37,13 +32,12 @@ namespace Phoenix.Sales.Plugins.UnitTests
             serviceStub.Setup(x => x.GetService(typeof(ITracingService))).Returns(new Mock<ITracingService>().Object);
             var orgServiceMock = new Mock<IOrganizationService>();
             factory.Setup(x => x.CreateOrganizationService(It.IsAny<Guid>())).Returns(orgServiceMock.Object);
-
             var entity = new Entity("global_contractnumber") { LogicalName = "global_contract" };
             var item = new KeyValuePair<string, object>("Target", entity);
             parameters.Add(item);
-
-            return new ContractNumberPlugin(new FakeServiceContextFactory(list));
+            plugin = new ContractNumberPlugin(new FakeServiceContextFactory(list));
         }
+
 
 
         [Test]
@@ -61,7 +55,21 @@ namespace Phoenix.Sales.Plugins.UnitTests
         }
 
         [Test]
-        [ExpectedException(typeof(PluginException))]
+        public void GlobalContractNumberIgnoreLetters()
+        {
+            //Arrange
+            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "XX-123") } });
+            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "122") } });
+            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "121") } });
+            //Act
+            plugin.Execute(serviceProvider);
+            //Assert
+            object actual = ((Entity)contextMock.Object.InputParameters["Target"])["global_contractnumber"];
+            Assert.AreEqual("123", actual);
+        }
+
+        [Test]
+        [ExpectedException(typeof(PluginException), ExpectedMessage = "Context.Mode must be of type MessageProcessingMode.Synchronous.")]
         public void PluginMustNotBeAsync()
         {
             contextMock.Setup(x => x.Mode).Returns(MessageProcessingMode.Asynchronous);
@@ -73,7 +81,7 @@ namespace Phoenix.Sales.Plugins.UnitTests
         [TestCase(MessageProcessingStage.MainOperation)]
         [TestCase(MessageProcessingStage.PostOperationCRM4)]
         [TestCase(MessageProcessingStage.PreValidation)]
-        [ExpectedException(typeof(PluginException))]
+        [ExpectedException(typeof(PluginException), ExpectedMessage = "Context.Stage must be of type MessageProcessingStage.PostOperation.")]
         public void PluginThrowsExceptionIfNotPostOperation(int stage)
         {
             contextMock.Setup(x => x.Stage).Returns(stage);
@@ -82,7 +90,7 @@ namespace Phoenix.Sales.Plugins.UnitTests
 
 
         [Test]
-        [ExpectedException(typeof(PluginException))]
+        [ExpectedException(typeof(PluginException), ExpectedMessage = "Entity is not of correct type. Check LogicalName.")]
         public void WrongEntityType()
         {
             parameters.Clear();

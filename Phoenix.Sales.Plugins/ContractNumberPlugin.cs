@@ -36,7 +36,7 @@ namespace Phoenix.Sales.Plugins
             var orgContext = serviceContextFactory.GetOrganizationServiceContext(service);
             var tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
             if (tracingService == null) throw new PluginException("Failed to retrieve the tracing service");
-            tracingService.Trace("Entering");
+            tracingService.Trace("Entering Execute on ContractNumberPlugin");
 
             if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
