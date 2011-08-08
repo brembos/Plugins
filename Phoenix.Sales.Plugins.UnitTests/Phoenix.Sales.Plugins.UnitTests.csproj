@@ -58,7 +58,6 @@
   <ItemGroup>
     <Compile Include="ContractPluginTests.cs" />
     <Compile Include="Wrappers\FakeServiceContextFactory.cs" />
-    <Compile Include="SamplePluginTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Wrappers\ServiceContextWrapper.cs" />
   </ItemGroup>

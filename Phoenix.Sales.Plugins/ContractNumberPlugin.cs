@@ -48,42 +48,17 @@ namespace Phoenix.Sales.Plugins
                         if (entity.LogicalName != "global_contract")
                             throw new PluginException("Entity is not of correct type. Check LogicalName.");
 
-                        var numbers = orgContext.CreateQuery("global_contract").Where(c => c["global_contractnumber"] != null).Select(c => c["global_contractnumber"].ToString()).ToList();
+                        var numbers = orgContext.CreateQuery("global_contract")
+                            .Where(c => c["global_contractnumber"].IsNotNullAndNumeric())
+                            .Select(c => int.Parse(c["global_contractnumber"].ToString())).ToList();
                         tracingService.Trace("Found: ", numbers.Count);
 
                         int current = 0;
                         if (numbers.Count > 0)
                         {
-                            var result = int.TryParse(numbers.Max(), out current);
+                            current = numbers.Max();
                         }
 
-                        //var query = new QueryExpression
-                        //{
-                        //    EntityName = "global_contract",
-                        //    ColumnSet = new ColumnSet("global_contractnumber"),
-                        //    Criteria = new FilterExpression
-                        //    {
-                        //        Conditions = 
-                        //        {
-                        //            new ConditionExpression
-                        //            {
-                        //                AttributeName = "global_contractnumber", 
-                        //                Operator = ConditionOperator.NotNull
-                        //            }
-                        //        }
-                        //    }
-                        //};
-                        //
-                        //var entities = service.RetrieveMultiple(query).Entities;
-                        //if (entities != null && entities.Count > 0)
-                        //{
-                        //    tracingService.Trace("Found: ", entities.Count);
-                        //    var contracts = entities.Select(c => c.Attributes["global_contractnumber"].ToString()).ToList();
-                        //    var result = contracts.Max();
-                        //    if (int.TryParse(result, out current))
-                        //    {
-                        //    }
-                        //}
                         current = current + 1;
                         entity[ContractNumberFieldName] = current.ToString();
                         service.Update(entity);

@@ -14,9 +14,15 @@ namespace Phoenix.Sales.Plugins.UnitTests
         private Mock<IPluginExecutionContext> contextMock;
         private readonly ParameterCollection parameters = new ParameterCollection();
         ContractNumberPlugin plugin;
+        IList<Entity> list = new List<Entity>();
 
         [TestFixtureSetUp]
         public void SetupServiceProvider()
+        {
+            plugin = GetPlugin();
+        }
+
+        private ContractNumberPlugin GetPlugin()
         {
             contextMock = new Mock<IPluginExecutionContext>();
             contextMock.Setup(x => x.Depth).Returns(1);
@@ -32,24 +38,21 @@ namespace Phoenix.Sales.Plugins.UnitTests
             var orgServiceMock = new Mock<IOrganizationService>();
             factory.Setup(x => x.CreateOrganizationService(It.IsAny<Guid>())).Returns(orgServiceMock.Object);
 
-            IList<Entity> list = new List<Entity>();
-            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "123") } });
-            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "122") } });
-            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "121") } });
+            var entity = new Entity("global_contractnumber") { LogicalName = "global_contract" };
+            var item = new KeyValuePair<string, object>("Target", entity);
+            parameters.Add(item);
 
-            plugin = new ContractNumberPlugin(new FakeServiceContextFactory(list));
+            return new ContractNumberPlugin(new FakeServiceContextFactory(list));
         }
 
 
-
-
         [Test]
-        public void GlobalContractNumberAttributeMustExist()
+        public void GlobalContractNumberAddingOneToExisting()
         {
             //Arrange
-            var entity = new Entity(ContractNumberPlugin.ContractNumberFieldName) { LogicalName = "global_contract" };
-            var item = new KeyValuePair<string, object>("Target", entity);
-            parameters.Add(item);
+            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "123") } });
+            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "122") } });
+            list.Add(new Entity("global_contract") { Attributes = new AttributeCollection() { new KeyValuePair<string, object>("global_contractnumber", "121") } });
             //Act
             plugin.Execute(serviceProvider);
             //Assert
@@ -74,6 +77,18 @@ namespace Phoenix.Sales.Plugins.UnitTests
         public void PluginThrowsExceptionIfNotPostOperation(int stage)
         {
             contextMock.Setup(x => x.Stage).Returns(stage);
+            plugin.Execute(serviceProvider);
+        }
+
+
+        [Test]
+        [ExpectedException(typeof(PluginException))]
+        public void WrongEntityType()
+        {
+            parameters.Clear();
+            var entity = new Entity("global_contractnumber") { LogicalName = "global_contract_wrong_type" };
+            var item = new KeyValuePair<string, object>("Target", entity);
+            parameters.Add(item);
             plugin.Execute(serviceProvider);
         }
     }
