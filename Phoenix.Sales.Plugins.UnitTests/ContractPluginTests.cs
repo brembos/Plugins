@@ -13,12 +13,14 @@ namespace Phoenix.Sales.Plugins.UnitTests
         ContractNumberPlugin plugin;
         IServiceProvider serviceProvider;
         Mock<IPluginExecutionContext> contextMock;
-        readonly ParameterCollection parameters = new ParameterCollection();
-        readonly IList<Entity> list = new List<Entity>();
+        ParameterCollection parameters;
+        private IList<Entity> list;
 
-        [TestFixtureSetUp]
+        [SetUp]
         public void SetupServiceProvider()
         {
+            parameters = new ParameterCollection();
+            list = new List<Entity>();
             contextMock = new Mock<IPluginExecutionContext>();
             contextMock.Setup(x => x.Depth).Returns(1);
             contextMock.Setup(x => x.Stage).Returns(MessageProcessingStage.PostOperation);
