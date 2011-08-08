@@ -48,13 +48,16 @@ namespace Phoenix.Sales.Plugins
                         if (entity.LogicalName != "global_contract")
                             throw new PluginException("Entity is not of correct type. Check LogicalName.");
 
-                        var numbers = orgContext.CreateQuery("global_contract")
-                            .Where(c => c["global_contractnumber"].IsNotNullAndNumeric())
-                            .Select(c => int.Parse(c["global_contractnumber"].ToString())).ToList();
-                        tracingService.Trace("Found: ", numbers.Count);
+
+                        var contractNumbers = orgContext.CreateQuery("global_contract")
+                            .Where(c => c["global_contractnumber"] != null)
+                            .Select(c => c["global_contractnumber"].ToString()).ToList();
+                        var numbers = contractNumbers.Where(IsNumeric).Select(int.Parse).ToList();
+                        int count = numbers.Count();
+                        tracingService.Trace("Found: ", count);
 
                         int current = 0;
-                        if (numbers.Count > 0)
+                        if (count > 0)
                         {
                             current = numbers.Max();
                         }
@@ -67,6 +70,15 @@ namespace Phoenix.Sales.Plugins
             }
         }
 
+        private bool IsNotNullAndIsNumeric(object attribute)
+        {
+            return attribute != null && IsNumeric(attribute.ToString());
+        }
 
+        private bool IsNumeric(string text)
+        {
+            int result;
+            return int.TryParse(text, out result);
+        }
     }
 }
